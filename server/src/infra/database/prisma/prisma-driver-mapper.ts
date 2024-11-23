@@ -21,7 +21,6 @@ export class PrismaDriverMapper {
 
   static toPersistence(driver: Driver): Prisma.DriverUncheckedCreateInput {
     return {
-      id: driver.id,
       city: driver.city,
       email: driver.email,
       firstName: driver.firstName,

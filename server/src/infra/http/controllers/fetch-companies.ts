@@ -7,6 +7,7 @@ import { CompanyPresenter } from '../presenters/company-presenter'
 const fetchCompaniesQueryParamsSchema = z.object({
   page: z.coerce.number(),
   limit: z.coerce.number(),
+  name: z.string().optional(),
 })
 
 export class FetchCompaniesController {
@@ -19,11 +20,12 @@ export class FetchCompaniesController {
       throw new BadRequestError(JSON.stringify(_queryParams.error))
     }
 
-    const { limit, page } = _queryParams.data
+    const { limit, page, name } = _queryParams.data
 
     const { companies, meta } = await this.fetchCompanies.execute({
       limit,
       page,
+      name,
     })
 
     return res

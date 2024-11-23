@@ -18,7 +18,6 @@ export class PrismaVehicleMapper {
 
   static toPersistence(vehicle: Vehicle): Prisma.VehicleUncheckedCreateInput {
     return {
-      id: vehicle.id,
       capacity: vehicle.capacity,
       model: vehicle.model,
       plate: vehicle.plate,

@@ -1,5 +1,8 @@
 import { Company } from '@/core/entities/company'
-import { CompaniesRepository } from '../companies-repository'
+import {
+  CompaniesRepository,
+  SearchManyCompaniesFilters,
+} from '../companies-repository'
 
 export class InMemoryCompaniesRepository implements CompaniesRepository {
   public items: Company[] = []
@@ -20,12 +23,28 @@ export class InMemoryCompaniesRepository implements CompaniesRepository {
     return company
   }
 
-  async searchMany(page: number, limit: number): Promise<Company[]> {
-    return this.items.slice((page - 1) * limit, page * limit)
+  async searchMany(
+    page: number,
+    limit: number,
+    filters: SearchManyCompaniesFilters,
+  ): Promise<Company[]> {
+    return this.items
+      .filter((item) => {
+        const nameFilter = filters.name
+          ? item.name.includes(filters.name)
+          : true
+
+        return nameFilter
+      })
+      .slice((page - 1) * limit, page * limit)
   }
 
-  async count(): Promise<number> {
-    return this.items.length
+  async count(filters: SearchManyCompaniesFilters): Promise<number> {
+    return this.items.filter((item) => {
+      const nameFilter = filters.name ? item.name.includes(filters.name) : true
+
+      return nameFilter
+    }).length
   }
 
   async findById(companyId: number): Promise<Company | null> {

@@ -13,6 +13,7 @@ interface FetchDriverVehiclesUseCaseResponse {
   vehicles: Vehicle[]
   meta: {
     count: number
+    totalPages: number
   }
 }
 
@@ -41,6 +42,6 @@ export class FetchDriverVehiclesUseCase {
 
     const count = await this.vehiclesRepository.countByDriverId(driverId)
 
-    return { vehicles, meta: { count } }
+    return { vehicles, meta: { count, totalPages: Math.ceil(count / limit) } }
   }
 }

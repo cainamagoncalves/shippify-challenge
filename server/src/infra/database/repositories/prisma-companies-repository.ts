@@ -1,5 +1,8 @@
 import { Company } from '@/core/entities/company'
-import { CompaniesRepository } from '@/core/repositories/companies-repository'
+import {
+  CompaniesRepository,
+  SearchManyCompaniesFilters,
+} from '@/core/repositories/companies-repository'
 import { PrismaCompanyMapper } from '../prisma/prisma-company-mapper'
 import { PrismaService } from '@/infra/prisma-service'
 
@@ -28,17 +31,32 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
     return PrismaCompanyMapper.toDomain(company)
   }
 
-  async searchMany(page: number, limit: number): Promise<Company[]> {
+  async searchMany(
+    page: number,
+    limit: number,
+    filters: SearchManyCompaniesFilters,
+  ): Promise<Company[]> {
     const companies = await this.prismaService.company.findMany({
       skip: (page - 1) * limit,
       take: limit,
+      where: {
+        name: {
+          contains: filters.name,
+        },
+      },
     })
 
     return companies.map(PrismaCompanyMapper.toDomain)
   }
 
-  async count(): Promise<number> {
-    return this.prismaService.company.count()
+  async count(filters: SearchManyCompaniesFilters): Promise<number> {
+    return this.prismaService.company.count({
+      where: {
+        name: {
+          contains: filters.name,
+        },
+      },
+    })
   }
 
   async findById(companyId: number): Promise<Company | null> {

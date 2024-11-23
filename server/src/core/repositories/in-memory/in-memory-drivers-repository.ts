@@ -1,5 +1,8 @@
 import { Driver } from '@/core/entities/driver'
-import { DriversRepository } from '../drivers-repository'
+import {
+  DriversRepository,
+  SearchManyDriversFilters,
+} from '../drivers-repository'
 
 export class InMemoryDriversRepository implements DriversRepository {
   public items: Driver[] = []
@@ -42,5 +45,31 @@ export class InMemoryDriversRepository implements DriversRepository {
 
   async countByCompany(companyId: number): Promise<number> {
     return this.items.filter((item) => item.companyId === companyId).length
+  }
+
+  async searchMany(
+    page: number,
+    limit: number,
+    filters: SearchManyDriversFilters,
+  ): Promise<Driver[]> {
+    return this.items
+      .filter((item) => {
+        const companyFilter = filters.companyId
+          ? item.companyId === filters.companyId
+          : true
+
+        return companyFilter
+      })
+      .slice((page - 1) * limit, page * limit)
+  }
+
+  async count(filters: SearchManyDriversFilters): Promise<number> {
+    return this.items.filter((item) => {
+      const companyFilter = filters.companyId
+        ? item.companyId === filters.companyId
+        : true
+
+      return companyFilter
+    }).length
   }
 }

@@ -1,4 +1,7 @@
-import { DriversRepository } from '@/core/repositories/drivers-repository'
+import {
+  DriversRepository,
+  SearchManyDriversFilters,
+} from '@/core/repositories/drivers-repository'
 import { PrismaService } from '@/infra/prisma-service'
 import { Driver } from '@/core/entities/driver'
 import { PrismaDriverMapper } from '../prisma/prisma-driver-mapper'
@@ -64,6 +67,30 @@ export class PrismaDriversRepository implements DriversRepository {
     return this.prismaService.driver.count({
       where: {
         companyId,
+      },
+    })
+  }
+
+  async searchMany(
+    page: number,
+    limit: number,
+    filters: SearchManyDriversFilters,
+  ): Promise<Driver[]> {
+    const drivers = await this.prismaService.driver.findMany({
+      skip: (page - 1) * limit,
+      take: page * limit,
+      where: {
+        companyId: filters.companyId,
+      },
+    })
+
+    return drivers.map(PrismaDriverMapper.toDomain)
+  }
+
+  async count(filters: SearchManyDriversFilters): Promise<number> {
+    return this.prismaService.driver.count({
+      where: {
+        companyId: filters.companyId,
       },
     })
   }

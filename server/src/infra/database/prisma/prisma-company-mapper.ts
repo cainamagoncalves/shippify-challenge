@@ -17,7 +17,6 @@ export class PrismaCompanyMapper {
 
   static toPersistence(company: Company): Prisma.CompanyUncheckedCreateInput {
     return {
-      id: company.id,
       city: company.city,
       name: company.name,
       planType: company.planType,
