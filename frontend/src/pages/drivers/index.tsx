@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useSearchParams } from 'react-router'
 
-import { Driver } from '@/api/_types/driver'
 import { getDrivers } from '@/api/get-drivers'
 import {
   Pagination,
@@ -21,8 +20,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { toast } from '@/hooks/use-toast'
 
 import { DriversTableFilters } from './components/drivers-table-filters'
+import { DriversTableLoading } from './components/drivers-table-loading'
 import { DriversTableRow } from './components/drivers-table-row'
 
 export function Drivers() {
@@ -34,8 +35,9 @@ export function Drivers() {
 
   const {
     data: driversResult,
-    isError,
-    error,
+    isLoading: isDriversResultLoading,
+    isError: isDriversResultRequestError,
+    error: driversResultError,
   } = useQuery({
     queryKey: ['drivers', companyId, page],
     queryFn: () =>
@@ -51,6 +53,15 @@ export function Drivers() {
       setPagesCount(Math.ceil(driversResult?.meta?.count / 5))
     }
   }, [driversResult])
+
+  useEffect(() => {
+    if (isDriversResultRequestError) {
+      toast({
+        title: driversResultError.message,
+        variant: 'destructive',
+      })
+    }
+  }, [isDriversResultRequestError, driversResultError])
 
   function handleSetPreviousPage() {
     const params = new URLSearchParams()
@@ -104,9 +115,15 @@ export function Drivers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {driversResult?.drivers.map((driver) => {
-              return <DriversTableRow key={driver.firstName} driver={driver} />
-            })}
+            {isDriversResultLoading ? (
+              <DriversTableLoading />
+            ) : (
+              driversResult?.drivers.map((driver) => {
+                return (
+                  <DriversTableRow key={driver.firstName} driver={driver} />
+                )
+              })
+            )}
           </TableBody>
         </Table>
 

@@ -1,66 +1,101 @@
-import { ArrowRight, CheckCircle, City, Tag } from '@phosphor-icons/react'
+import { ArrowRight } from '@phosphor-icons/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 
 import { getCompanies } from '@/api/get-companies'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from '@/components/ui/card'
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel'
-import { useToast } from '@/hooks/use-toast'
-import { useCarousel } from '@/hooks/useCarousel'
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { toast } from '@/hooks/use-toast'
 
-import { CardLoading } from './components/card-loading'
+import { CompaniesTableLoading } from './components/companies-table-loading'
+import { CompaniesTableRow } from './components/companies-table-row'
 
 export function Home() {
-  const [savedTotalPages, setSavedTotalPages] = useState(1)
+  const [pagesCount, setPagesCount] = useState(1)
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const { currentCarouselPage, setCarouselApi } = useCarousel()
-  const { toast } = useToast()
+  const page = searchParams.get('page') ?? 1
+
   const navigate = useNavigate()
 
   const {
     data: companiesResult,
-    error,
-    isError,
-    isLoading,
+    error: companiesResultError,
+    isError: isCompaniesResultRequestError,
+    isLoading: isCompaniesResultLoading,
   } = useQuery({
-    queryKey: ['companies', currentCarouselPage],
-    queryFn: () => getCompanies({ limit: 6, page: currentCarouselPage }),
-    enabled: currentCarouselPage > 0,
+    queryKey: ['companies', page],
+    queryFn: () => getCompanies({ limit: 5, page: Number(page) }),
   })
 
   useEffect(() => {
-    if (isError) {
+    if (companiesResultError) {
       toast({
-        title: error.message,
+        title: companiesResultError.message,
         variant: 'destructive',
       })
     }
-  }, [isError, error, toast])
+  }, [isCompaniesResultRequestError, companiesResultError])
 
   useEffect(() => {
-    if (companiesResult?.meta?.totalPages) {
-      setSavedTotalPages(companiesResult.meta.totalPages)
+    if (companiesResult) {
+      setPagesCount(Math.ceil(companiesResult?.meta?.totalPages))
     }
   }, [companiesResult])
+
+  function handleSetPreviousPage() {
+    const params = new URLSearchParams()
+
+    if (Number(page) - 1 >= 1) {
+      params.set('page', String(Number(page) - 1))
+
+      setSearchParams(params)
+    }
+  }
+
+  function handleSetNextPage() {
+    const params = new URLSearchParams()
+
+    if (Number(page) + 1 <= pagesCount) {
+      params.set('page', String(Number(page) + 1))
+
+      setSearchParams(params)
+    }
+  }
+
+  function handleSetPage(page: number) {
+    const params = new URLSearchParams()
+
+    params.set('page', String(Number(page)))
+
+    setSearchParams(params)
+  }
+
+  const doesShowFirstPaginationEllipsis = Number(page) > 2
+
+  const doesShowLastPaginationEllipsis = Number(page) + 1 < pagesCount
 
   return (
     <div>
       <Helmet title="Home" />
-      <h1 className="bold text-5xl text-primary">
+      <h1 className="font-extrabold text-5xl text-primary">
         Olá,{' '}
         <span className="text-foreground bold text-4xl">
           escolha a empresa <br /> para visualizar os motoristas
@@ -68,65 +103,104 @@ export function Home() {
       </h1>
 
       <main className="flex flex-col h-full w-full justify-center items-center mt-20">
-        {isLoading ? (
-          <div className="grid grid-cols-3 gap-3 p-6">
-            {Array.from({ length: 6 }).map((_, index) => {
-              return <CardLoading key={String(index)} />
-            })}
-          </div>
-        ) : (
-          <Carousel setApi={setCarouselApi}>
-            <CarouselContent>
-              {Array.from({ length: savedTotalPages })?.map((_, index) => {
+        <Table className="mt-6">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isCompaniesResultLoading ? (
+              <CompaniesTableLoading />
+            ) : (
+              companiesResult?.companies.map((company) => {
                 return (
-                  <CarouselItem
-                    key={index.toString()}
-                    className="grid grid-cols-3 gap-3 p-6"
-                  >
-                    {companiesResult?.companies?.map((company) => {
-                      return (
-                        <Card
-                          key={company.id.toString()}
-                          className="hover:ring-2 ring-primary transition-all cursor-pointer self-start"
-                          onClick={() =>
-                            navigate(
-                              `/drivers?companyName=${company.name}&companyId=${company.id}`,
-                            )
-                          }
-                        >
-                          <CardHeader className="font-bold text-2xl">
-                            {company.name}
-                          </CardHeader>
-                          <CardDescription></CardDescription>
-
-                          <CardContent className="flex flex-col">
-                            <span className="flex items-center gap-2">
-                              <City /> {company.city}
-                            </span>
-                            <span className="flex items-center gap-2">
-                              <Tag />
-                              {company.planType}
-                            </span>
-                            <span className="flex items-center gap-2">
-                              <CheckCircle />
-                              {company.status}
-                            </span>
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
-                  </CarouselItem>
+                  <CompaniesTableRow key={company.name} company={company} />
                 )
-              })}
-            </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
-          </Carousel>
-        )}
+              })
+            )}
+          </TableBody>
+        </Table>
+
+        <Pagination className="mt-6">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                data-disabled={Number(page) === 1}
+                className="rounded-[6px] cursor-pointer data-[disabled=true]:cursor-not-allowed"
+                onClick={handleSetPreviousPage}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationLink
+                className="rounded-[6px] cursor-pointer"
+                onClick={() => handleSetPage(1)}
+                isActive={Number(page) === 1}
+              >
+                1
+              </PaginationLink>
+            </PaginationItem>
+            {doesShowFirstPaginationEllipsis && (
+              <PaginationItem>
+                <PaginationEllipsis />
+              </PaginationItem>
+            )}
+            {pagesCount > 1 &&
+              Number(page) < pagesCount &&
+              Array.from({ length: pagesCount })
+                .fill(0)
+                .map((_, index) => index + 1)
+                .slice(
+                  Number(page) - 1 === 1 ? 1 : Number(page) - 2,
+                  Number(page) + 1 >= pagesCount
+                    ? Number(page)
+                    : Number(page) + 1,
+                )
+                .map((item) => {
+                  return (
+                    <PaginationItem key={item.toString()}>
+                      <PaginationLink
+                        isActive={Number(page) === item}
+                        onClick={() => handleSetPage(item)}
+                      >
+                        {item}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                })}
+            {doesShowLastPaginationEllipsis && (
+              <PaginationItem>
+                <PaginationEllipsis />
+              </PaginationItem>
+            )}
+            {pagesCount > 1 && (
+              <PaginationItem>
+                <PaginationLink
+                  className="rounded-[6px] cursor-pointer"
+                  onClick={() => handleSetPage(pagesCount)}
+                  isActive={pagesCount === Number(page)}
+                >
+                  {pagesCount}
+                </PaginationLink>
+              </PaginationItem>
+            )}
+            <PaginationItem>
+              <PaginationNext
+                data-disabled={pagesCount === Number(page)}
+                className="rounded-[6px] cursor-pointer data-[disabled=true]:cursor-not-allowed"
+                onClick={handleSetNextPage}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
 
         <Button
           variant="ghost"
-          className="rounded-[6px]"
+          className="rounded-[6px] mt-6 self-end"
           onClick={() => navigate(`/drivers`)}
         >
           Pular essa etapa

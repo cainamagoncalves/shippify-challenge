@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { Driver } from '@/api/_types/driver'
 import { createVehicle } from '@/api/create-vehicle'
 import { Button } from '@/components/ui/button'
 import {
@@ -168,7 +167,11 @@ export function CreateVehicleForm({ driverId }: CreateVehicleFormProps) {
           />
 
           <div className="flex justify-end">
-            <Button className="rounded-[6px]" type="submit">
+            <Button
+              disabled={form.formState.isSubmitting}
+              className="rounded-[6px]"
+              type="submit"
+            >
               Submit
             </Button>
           </div>

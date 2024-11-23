@@ -23,8 +23,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { toast } from '@/hooks/use-toast'
 
 import { CreateVehicleForm } from './components/create-vehicle-form'
+import { DriverVehiclesTableLoading } from './components/driver-vehicles-table-loading'
 import { DriverVehiclesTableRow } from './components/driver-vehicles-table-row'
 
 export function DriverVehicles() {
@@ -34,7 +36,12 @@ export function DriverVehicles() {
 
   const page = searchParams.get('page') ?? 1
 
-  const { data: driverVehiclesResult } = useQuery({
+  const {
+    data: driverVehiclesResult,
+    isLoading: isDriverVehiclesResultLoading,
+    isError: isDriverVehiclesResultRequestError,
+    error: driverVehiclesResultError,
+  } = useQuery({
     queryKey: ['driver-vehicles'],
     queryFn: () =>
       getDriverVehicles({
@@ -43,6 +50,15 @@ export function DriverVehicles() {
         page: Number(page),
       }),
   })
+
+  useEffect(() => {
+    if (isDriverVehiclesResultRequestError) {
+      toast({
+        title: driverVehiclesResultError.message,
+        variant: 'destructive',
+      })
+    }
+  }, [isDriverVehiclesResultRequestError, driverVehiclesResultError])
 
   useEffect(() => {
     if (driverVehiclesResult) {
@@ -112,14 +128,18 @@ export function DriverVehicles() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {driverVehiclesResult?.vehicles?.map((vehicle) => {
-              return (
-                <DriverVehiclesTableRow
-                  key={String(vehicle.id)}
-                  vehicle={vehicle}
-                />
-              )
-            })}
+            {isDriverVehiclesResultLoading ? (
+              <DriverVehiclesTableLoading />
+            ) : (
+              driverVehiclesResult?.vehicles?.map((vehicle) => {
+                return (
+                  <DriverVehiclesTableRow
+                    key={String(vehicle.id)}
+                    vehicle={vehicle}
+                  />
+                )
+              })
+            )}
           </TableBody>
         </Table>
 
