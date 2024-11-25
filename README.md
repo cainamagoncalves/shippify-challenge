@@ -29,6 +29,9 @@ $ npm install
 # In the server folder, you can use you own database, running
 $ docker-compose up -d
 
+# To run all migrations you need to run
+$ npx prisma migrate dev
+
 # Run the server with
 $ npm run start:dev
 
